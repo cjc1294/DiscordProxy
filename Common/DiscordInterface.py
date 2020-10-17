@@ -2,7 +2,8 @@ import discord
 
 class Interface:
     def __init__(self, token):
-        pass
+        self.token = token
+        self.client = discord.Client()
 
 
     def run(self):
