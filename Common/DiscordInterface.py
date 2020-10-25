@@ -8,7 +8,7 @@ class Interface:
 
 
     def run(self):
-        pass
+        self.client.run(self.token)
 
 
     def recv(self):
