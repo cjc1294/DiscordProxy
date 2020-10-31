@@ -1,14 +1,16 @@
 import discord
+import asyncio
+from base64 import b64encode, b64decode
 
-class Interface:
-    def __init__(self, token, commChannelId):
-        self.token = token
+class Interface(discord.Client):
+    messageBlockSize = 1500
+    startHeader = "Message"
+    lengthHeader = "Length"
+
+    def __init__(self, commChannelId):
+        super().__init__()
         self.commChannelId = commChannelId
-        self.client = discord.Client()
-
-
-    def run(self):
-        self.client.run(self.token)
+        self.recvQueue = asyncio.Queue()
 
 
     def recv(self):
