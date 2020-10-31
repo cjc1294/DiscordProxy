@@ -2,3 +2,4 @@ venv
 DestNet/config.ini
 SourceNet/config.ini
 __pycache__/
+test.py
