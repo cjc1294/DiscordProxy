@@ -25,12 +25,35 @@ class Interface(discord.Client):
         pass
 
 
-    def send(self, message):
+    async def send(self, message):
+        """
+        Send a message
+        """
+        await self.wait_until_ready()
         ## Format message(if message is string, convert to 
         ## bytes, then add message start text and length)
+        if type(message) is str:
+            message = message.encode()
+
+        formattedMessage = self.startHeader.encode() + b":\n"
+        formattedMessage += self.lengthHeader.encode() + b":" + str(len(message)).encode() + b"\n"
+        formattedMessage += message
+
+        formattedMessage = b64encode(formattedMessage).decode()
 
         ## Get communication channel
+        commChannel = await self.fetch_channel(self.commChannelId)
 
         ## Send message
         # Message sent in base64 encoded chunks
-        pass
+        remaining = formattedMessage
+        while len(remaining) > self.messageBlockSize:
+            await commChannel.send(formattedMessage[:self.messageBlockSize])
+            remaining = remaining[self.messageBlockSize:]
+
+        await commChannel.send(remaining)
+        print("[->] {}".format(message))
+
+
+    async def on_ready(self):
+        print(self.user.name + ": Logged in")
