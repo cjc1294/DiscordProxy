@@ -5,11 +5,26 @@ from Common.DiscordInterface import Interface
 
 
 class Endpoint:
-    def __init__(self, loop, sock, interface, server=None):
-        self.loop = loop
-        self.sock = sock
+    def __init__(self, interface, *connectionArgs):
+        self.loop = asyncio.get_event_loop()
         self.interface = interface
-        self.server = server
+
+        if type(connectionArgs[0]) is socket.socket:
+            self.server = connectionArgs[0]
+        else:
+            self.server = None
+            self.destAddr = connectionArgs[0]
+            self.destPort = connectionArgs[1]
+
+        if self.server:
+            self.server.setblocking(True)
+            self.sock = self.server.accept()
+            self.sock = self.sock[0]
+            self.sock.setblocking(False)
+            self.server.setblocking(False)
+        else:
+            self.sock = socket.create_connection((self.destAddr, self.destPort))
+            self.sock.setblocking(False)
 
 
     async def recvLoop(self):
@@ -42,7 +57,8 @@ class Endpoint:
             self.sock = self.sock[0]
         else:
             self.sock = socket.socket()
-            await self.loop.sock_connect(self.sock, (sys.argv[4], int(sys.argv[5])))
+            self.sock.setblocking(False)
+            await self.loop.sock_connect(self.sock, (self.destAddr, self.destPort))
 
 
 def main():
@@ -74,37 +90,29 @@ Usage:
                 """)
         sys.exit(1)
 
+    token = sys.argv[2] 
+    commChannelId = sys.argv[3]
+    interface = Interface(commChannelId)
+    loop = asyncio.get_event_loop()
 
     if sys.argv[1] == "source":
-        token, commChannelId, port = sys.argv[2:5]
-
-        interface = Interface(commChannelId)
-        loop = interface.loop
+        port = sys.argv[4]
+        port = int(port)
 
         server = socket.socket()
-        server.bind(('', int(port)))
+        server.bind(('', port))
         server.listen(8)
 
-        sock = server.accept()[0]
-        sock.setblocking(False)
-
-        server.setblocking(False)
-
-        endpoint = Endpoint(loop, sock, interface, server)
+        endpoint = Endpoint(interface, server)
 
     elif sys.argv[1] == "dest":
-        token, commChannelId, destAddr, port = sys.argv[2:6]
+        destAddr, port = sys.argv[4:6]
+        port = int(port)
 
-        interface = Interface(commChannelId)
-        loop = interface.loop
+        endpoint = Endpoint(interface, destAddr, port)
 
-        sock = socket.create_connection((destAddr, int(port)))
-        sock.setblocking(False)
-
-        endpoint = Endpoint(loop, sock, interface)
-
-    interface.loop.create_task(endpoint.sendLoop())
-    interface.loop.create_task(endpoint.recvLoop())
+    loop.create_task(endpoint.sendLoop())
+    loop.create_task(endpoint.recvLoop())
 
     interface.run(token)
 
