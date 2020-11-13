@@ -3,7 +3,7 @@ import asyncio
 from base64 import a85encode, a85decode
 
 class Interface(discord.Client):
-    messageBlockSize = 1500
+    messageBlockSize = 1600
     startHeader = "Message"
     lengthHeader = "Length"
 
