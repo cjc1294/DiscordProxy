@@ -1,6 +1,6 @@
 import discord
 import asyncio
-from base64 import b64encode, b64decode
+from base64 import a85encode, a85decode
 
 class Interface(discord.Client):
     messageBlockSize = 1500
@@ -39,7 +39,7 @@ class Interface(discord.Client):
         formattedMessage += self.lengthHeader.encode() + b":" + str(len(message)).encode() + b"\n"
         formattedMessage += message
 
-        formattedMessage = b64encode(formattedMessage).decode()
+        formattedMessage = a85encode(formattedMessage).decode()
 
         ## Get communication channel
         commChannel = await self.fetch_channel(self.commChannelId)
@@ -64,7 +64,7 @@ class Interface(discord.Client):
         Bas64 decode incoming messages, and add them to the incoming queue
         """
         if message.author != self.user:
-            await self.incomingQueue.put(b64decode(message.content))
+            await self.incomingQueue.put(a85decode(message.content))
 
 
     async def process_messages(self):
